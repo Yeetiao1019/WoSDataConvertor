@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WoSDataConvertor
 {
-    class Program
+    class MainFunction
     {
         static void Main(string[] args)
         {
