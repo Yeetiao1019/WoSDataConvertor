@@ -94,7 +94,7 @@ namespace WoSDataConvertor
                     Ds.Tables.Add(Dt);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.WriteLine("讀取 csv 發生錯誤");
             }

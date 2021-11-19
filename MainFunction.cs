@@ -19,7 +19,7 @@ namespace WoSDataConvertor
             try
             {
                 var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
-                CsvToDataTable(BeforeModifyFileInfo);
+                BeforeModifyDs = ReadCsvFile.CsvToDataTable(BeforeModifyFileInfo);
                 SetTotalJournalCount();
 
                 DirectoryInfo AfterModifyDi = new DirectoryInfo(@"../../Document/修改後");
@@ -36,92 +36,71 @@ namespace WoSDataConvertor
         }
 
         /// <summary>
-        /// 將修改前的 CSV 經過處理後，存放到 DataTable
-        /// </summary>
-        /// <param name="fileInfo"></param>
-        private static void CsvToDataTable(FileInfo[] fileInfo)
-        {
-            int RowCount;
-            string Category;
-            string JournalRank;
-            string TotalJournal;
-            string ImpactFactor;
-            string Quartile;
-            try
-            {
-                for (int i = 0; i < fileInfo.Length; i++)       // 走訪修改前資料夾下的所有檔案
-                {
-                    BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
-                    RowCount = 1;
-                    var reader = new StreamReader(File.OpenRead(fileInfo[i].FullName));
-                    while (!reader.EndOfStream)
-                    {
-                        var DataLine = reader.ReadLine().Replace(", ", "，");       //讀取資料列，並先取代 "逗號+空白" 避免因 Category 的名稱導致資料切分錯誤
-                        var Values = DataLine.Split(',');   //用指定符號切割資料
-                        if (RowCount < 4 && Values.Length > 0)     // 避免讀取到格式不正確的資料列
-                        {
-                            RowCount++;
-                        }
-                        else if (RowCount >= 4 && Values.Length > 5)      // 讀取正確資料
-                        {
-                            for (int j = 0; j < Values[3].Split(';').Length; j++)
-                            {
-                                Category = Values[3];
-                                // IF值為 n/a，則領域期刊數、期刊排名、分位數為 n/a
-                                if (Values[5].Contains("n/a"))
-                                {
-                                    JournalRank = "n/a";
-                                    TotalJournal = "n/a";
-                                    Quartile = "n/a";
-                                    ImpactFactor = "n/a";
-                                }
-                                else
-                                {
-                                    JournalRank = "";
-                                    TotalJournal = "";
-                                    Quartile = Values[4].Replace("\"", "");
-                                    ImpactFactor = Values[5].Replace("\"", "");
-                                }
-                                Category = Category.Replace("; ", ";").Replace("，", ", ");     //將全形逗號還原回來
-                                BeforeModifyDt.Rows.Add(Values[0].Replace("\"", ""),
-                                    Category.Split(';')[j].Replace("\"", ""),
-                                    Quartile,
-                                    ImpactFactor,
-                                    JournalRank,
-                                    TotalJournal);
-                            }
-                        }
-                    }
-                    BeforeModifyDt = BeforeModifyDt.AsEnumerable()
-                        .OrderBy(r => r.Field<string>("JIF"))
-                        .CopyToDataTable();
-                    BeforeModifyDt.TableName = fileInfo[i].Name.Replace(".csv", "");
-                    BeforeModifyDs.Tables.Add(BeforeModifyDt);
-                }
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("讀取 csv 發生錯誤");
-            }
-        }
-
-        /// <summary>
         /// 設定領域期刊數
         /// </summary>
         private static void SetTotalJournalCount()
         {
+            int FirstNaRowIndex;
+            int TotalJournal;
+            List<int> JournalRank = new List<int>();
+            string JournalCategory;
+            decimal ImpactFactor;
+
             for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
             {
                 var Dt = BeforeModifyDs.Tables[i];
-                var JournalCategory = Dt.AsEnumerable()     // 取得 Dt 內的所有 Category
+
+                var JournalCategoryRow = Dt.AsEnumerable()     // 取得 Dt 內的所有 Category
                     .GroupBy(r => r.Field<string>("Category"))
                     .ToList();
 
-                for (int j = 0; j < JournalCategory.Count; j++)
+                for (int j = 0; j < JournalCategoryRow.Count; j++)
                 {
+                    JournalRank.Clear();
 
+                    // 避免讀到全為 n/a 的收錄分類
+                    if (Dt.AsEnumerable().Where(r => r.Field<string>("Category") == JournalCategoryRow[j].Key &&
+                    r.Field<string>("領域期刊數(Total Journal)") != "n/a").ToList().Count != 0)
+                    {
+                        TotalJournal = Dt.AsEnumerable()        // 取得該 Category 的領域期刊數（不包含 n/a）
+                    .Where(r => r.Field<string>("Category") == JournalCategoryRow[j].Key &&
+                    r.Field<string>("領域期刊數(Total Journal)") != "n/a")
+                    .CopyToDataTable().Rows.Count;
+
+                        var AllDataRow = Dt.AsEnumerable()     // 取得該 Catetory 的所有 DataRow（不包含n/a）
+                            .Where(r => r.Field<string>("Category") == JournalCategoryRow[j].Key &&
+                            r.Field<string>("領域期刊數(Total Journal)") != "n/a");
+
+                        // 設定領域期刊數的值
+                        AllDataRow.ToList().ForEach(r => r.SetField<string>("領域期刊數(Total Journal)", TotalJournal.ToString()));
+
+                        for (int k = 0; k < AllDataRow.ToList().Count; k++)
+                        {
+                            JournalRank.Add(2);
+                        }
+
+                        // 排名排序
+                        for (int k = 1; k < AllDataRow.ToList().Count; k++)
+                        {
+                            for (int m = 0; m < k; m++)
+                            {
+                                if (Convert.ToDecimal(AllDataRow.ToList()[m]["JIF"]) < Convert.ToDecimal(AllDataRow.ToList()[k]["JIF"]))
+                                {
+                                    AllDataRow.ToList()[m]["期刊排名(Journal Rank)"] = JournalRank[m]++;
+                                }
+                                // 若 IF 相同
+                                else if (Convert.ToDecimal(AllDataRow.ToList()[m]["JIF"]) == Convert.ToDecimal(AllDataRow.ToList()[k]["JIF"]))
+                                {
+                                    AllDataRow.ToList()[m]["期刊排名(Journal Rank)"] = JournalRank[m] - 1;
+                                }
+                                else
+                                {
+                                    AllDataRow.ToList()[k]["期刊排名(Journal Rank)"] = JournalRank[k]++;
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         }
     }
