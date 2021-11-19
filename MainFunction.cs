@@ -11,20 +11,31 @@ namespace WoSDataConvertor
     class MainFunction
     {
         private static DataSet BeforeModifyDs = new DataSet();
-        private static DataTable BeforeModifyDt;
-        private
         static void Main(string[] args)
         {
             string BeforeModifyFilePath = "../../Document/修改前";
+            string AfterModifyFilePath = "../../Document/修改後";
             try
             {
                 var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
                 BeforeModifyDs = ReadCsvFile.CsvToDataTable(BeforeModifyFileInfo);
-                SetTotalJournalCount();
+                SetTotalJournalCountAndRank();
 
-                DirectoryInfo AfterModifyDi = new DirectoryInfo(@"../../Document/修改後");
-                DirectoryInfo SummaryDi = new DirectoryInfo(@"../../Document/單一彙整檔");
+                DirectoryInfo AfterModifyDi = new DirectoryInfo(AfterModifyFilePath);
+                if (!AfterModifyDi.Exists)     //  若資料夾不存在，則建立
+                {
+                    AfterModifyDi.Create();
+                }
                 Console.WriteLine($"目前修改後的檔案資料夾路徑為：{AfterModifyDi.FullName}");
+                for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
+                {
+                    var Dt = BeforeModifyDs.Tables[i];
+                    Dt = ReplaceToNA(Dt);
+                    GenerateExcel.ExportExcelFile(Dt, Dt.TableName, AfterModifyFilePath);
+                }
+                Console.WriteLine($"檔案輸出完成，共 {GenerateExcel.FileCount} 個檔案。\n");
+
+                DirectoryInfo SummaryDi = new DirectoryInfo(@"../../Document/單一彙整檔");
                 Console.WriteLine($"目前匯出單一彙整檔的檔案資料夾路徑為：{SummaryDi.FullName}");
             }
             catch (Exception ex)
@@ -36,15 +47,12 @@ namespace WoSDataConvertor
         }
 
         /// <summary>
-        /// 設定領域期刊數
+        /// 設定領域期刊數與名次
         /// </summary>
-        private static void SetTotalJournalCount()
+        private static void SetTotalJournalCountAndRank()
         {
-            int FirstNaRowIndex;
             int TotalJournal;
             List<int> JournalRank = new List<int>();
-            string JournalCategory;
-            decimal ImpactFactor;
 
             for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
             {
@@ -88,7 +96,7 @@ namespace WoSDataConvertor
                                 {
                                     AllDataRow.ToList()[m]["期刊排名(Journal Rank)"] = JournalRank[m]++;
                                 }
-                                // 若 IF 相同
+                                // 若 IF 相同，則名次相同
                                 else if (Convert.ToDecimal(AllDataRow.ToList()[m]["JIF"]) == Convert.ToDecimal(AllDataRow.ToList()[k]["JIF"]))
                                 {
                                     AllDataRow.ToList()[m]["期刊排名(Journal Rank)"] = JournalRank[m] - 1;
@@ -102,6 +110,31 @@ namespace WoSDataConvertor
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 替換回 n/a
+        /// </summary>
+        /// <param name="dt"></param>
+        private static DataTable ReplaceToNA(DataTable dt)
+        {
+            DataTable AfterChangeTypeDt = new DataTable();
+            AfterChangeTypeDt = dt.Clone();
+            AfterChangeTypeDt.Columns["JIF"].DataType = typeof(string);
+            foreach (DataRow r in dt.Rows)
+            {
+                AfterChangeTypeDt.Rows.Add(r.ItemArray);
+            }
+
+            for (int i = 0; i < AfterChangeTypeDt.Rows.Count; i++)
+            {
+                if (AfterChangeTypeDt.Rows[i]["JIF"].ToString() == "0.00001")
+                {
+                    AfterChangeTypeDt.Rows[i]["JIF"] = "n/a";
+                }
+            }
+
+            return AfterChangeTypeDt;
         }
     }
 }

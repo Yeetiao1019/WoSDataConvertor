@@ -18,7 +18,12 @@ namespace WoSDataConvertor
             try
             {
                 DirectoryInfo BeforeModifyDi = new DirectoryInfo($@"{path}");
-                Console.WriteLine($"\n目前修改前的檔案資料夾路徑為：{BeforeModifyDi.FullName}");
+                if (!BeforeModifyDi.Exists)     //  若資料夾不存在，則建立
+                {
+                    BeforeModifyDi.Create();
+                }
+                Console.WriteLine($"\n目前修改前的檔案資料夾路徑為：{BeforeModifyDi.FullName}\n" +
+                    $"檔案數：{BeforeModifyDi.GetFiles().Length}\n");
                 return BeforeModifyDi.GetFiles();
             }
             catch (Exception ex)
@@ -68,7 +73,7 @@ namespace WoSDataConvertor
                                     JournalRank = "n/a";
                                     TotalJournal = "n/a";
                                     Quartile = "n/a";
-                                    ImpactFactor = 0.0m;
+                                    ImpactFactor = 0.00001m;
                                 }
                                 else
                                 {
