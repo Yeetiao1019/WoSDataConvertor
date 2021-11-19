@@ -63,7 +63,8 @@
   <ItemGroup>
     <Compile Include="MainFunction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReadExcelFile.cs" />
+    <Compile Include="ReadCsvFile.cs" />
+    <Compile Include="GetFileDataTables.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
