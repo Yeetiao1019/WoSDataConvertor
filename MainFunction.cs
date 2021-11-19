@@ -10,9 +10,10 @@ namespace WoSDataConvertor
 {
     class MainFunction
     {
+        private static DataTable BeforeModifyDt;
         static void Main(string[] args)
         {
-            DataTable BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
+            BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
             string BeforeModifyFilePath = "../../Document/修改前";
             var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
             CsvToDataTable(BeforeModifyFileInfo);
@@ -32,13 +33,26 @@ namespace WoSDataConvertor
         /// <param name="fileInfo"></param>
         private static void CsvToDataTable(FileInfo[] fileInfo)
         {
+            bool IsTitleRow;
             for (int i = 0; i < fileInfo.Length; i++)
             {
+                IsTitleRow = false;
                 var reader = new StreamReader(File.OpenRead(fileInfo[i].FullName));
                 while (!reader.EndOfStream)
                 {
                     var DataLine = reader.ReadLine();       //讀取資料列
                     var Values = DataLine.Split(',');   //用指定符號切割資料
+                    if (Values.Length == 6 && IsTitleRow == false && Values[5].Length > 0)     // 避免讀取到格式不正確的資料列
+                    {
+                        IsTitleRow = true;
+                    }
+                    else if (Values.Length == 6 && IsTitleRow == true && Values[5].Length > 0)      // 讀取正確資料
+                    {
+                        for (int j = 0; j < Values[3].Split(';').Length; j++)
+                        {
+                            BeforeModifyDt.Rows.Add(Values[0], Values[3].Split(';')[j], Values[4], Values[5]);
+                        }
+                    }
                 }
             }
         }
