@@ -10,10 +10,11 @@ namespace WoSDataConvertor
 {
     class MainFunction
     {
+        private static DataSet BeforeModifyDs = new DataSet();
         private static DataTable BeforeModifyDt;
+        private
         static void Main(string[] args)
         {
-            BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
             string BeforeModifyFilePath = "../../Document/修改前";
             var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
             CsvToDataTable(BeforeModifyFileInfo);
@@ -33,27 +34,34 @@ namespace WoSDataConvertor
         /// <param name="fileInfo"></param>
         private static void CsvToDataTable(FileInfo[] fileInfo)
         {
-            bool IsTitleRow;
-            for (int i = 0; i < fileInfo.Length; i++)
+            int RowCount;
+            for (int i = 0; i < fileInfo.Length; i++)       // 走訪修改前資料夾下的所有檔案
             {
-                IsTitleRow = false;
+                BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
+                RowCount = 1;
                 var reader = new StreamReader(File.OpenRead(fileInfo[i].FullName));
+                BeforeModifyDt.TableName = fileInfo[i].Name;
                 while (!reader.EndOfStream)
                 {
                     var DataLine = reader.ReadLine();       //讀取資料列
                     var Values = DataLine.Split(',');   //用指定符號切割資料
-                    if (Values.Length == 6 && IsTitleRow == false && Values[5].Length > 0)     // 避免讀取到格式不正確的資料列
+                    if (RowCount < 4 && Values.Length > 0)     // 避免讀取到格式不正確的資料列
                     {
-                        IsTitleRow = true;
+                        RowCount++;
                     }
-                    else if (Values.Length == 6 && IsTitleRow == true && Values[5].Length > 0)      // 讀取正確資料
+                    else if (RowCount >= 4 && Values.Length > 5)      // 讀取正確資料
                     {
                         for (int j = 0; j < Values[3].Split(';').Length; j++)
                         {
-                            BeforeModifyDt.Rows.Add(Values[0], Values[3].Split(';')[j], Values[4], Values[5]);
+                            Values[3] = Values[3].Replace("; ", ";");
+                            BeforeModifyDt.Rows.Add(Values[0].Replace("\"", ""),
+                                Values[3].Split(';')[j].Replace("\"", ""),
+                                Values[4].Replace("\"", ""),
+                                Values[5].Replace("\"", ""));
                         }
                     }
                 }
+                BeforeModifyDs.Tables.Add(BeforeModifyDt);
             }
         }
     }
