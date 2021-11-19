@@ -40,7 +40,7 @@ namespace WoSDataConvertor
             string Category;
             string JournalRank;
             string TotalJournal;
-            string ImpactFactor;
+            decimal ImpactFactor;
             string Quartile;
             try
             {
@@ -68,14 +68,14 @@ namespace WoSDataConvertor
                                     JournalRank = "n/a";
                                     TotalJournal = "n/a";
                                     Quartile = "n/a";
-                                    ImpactFactor = "n/a";
+                                    ImpactFactor = 0.0m;
                                 }
                                 else
                                 {
-                                    JournalRank = "0";
+                                    JournalRank = "1";
                                     TotalJournal = "";
                                     Quartile = Values[4].Replace("\"", "");
-                                    ImpactFactor = Values[5].Replace("\"", "");
+                                    ImpactFactor = Convert.ToDecimal(Values[5].Replace("\"", ""));
                                 }
                                 Category = Category.Replace("; ", ";").Replace("，", ", ");     //將全形逗號還原回來
                                 Dt.Rows.Add(Values[0].Replace("\"", ""),
@@ -88,7 +88,7 @@ namespace WoSDataConvertor
                         }
                     }
                     Dt = Dt.AsEnumerable()      // 以 IF 值降冪排序
-                        .OrderByDescending(r => r.Field<string>("JIF"))
+                        .OrderByDescending(r => r.Field<decimal>("JIF"))
                         .CopyToDataTable();
                     Dt.TableName = fileInfo[i].Name.Replace(".csv", "");
                     Ds.Tables.Add(Dt);
