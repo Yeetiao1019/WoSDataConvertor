@@ -92,9 +92,13 @@ namespace WoSDataConvertor
                             }
                         }
                     }
-                    Dt = Dt.AsEnumerable()      // 以 IF 值降冪排序
-                        .OrderByDescending(r => r.Field<decimal>("JIF"))
+                    Dt = Dt.AsEnumerable()      // 以Category降冪排序
+                        .OrderBy(r => r.Field<string>("Category"))
+                        //.OrderByDescending(r => r.Field<decimal>("JIF"))
                         .CopyToDataTable();
+                    //Dt = Dt.AsEnumerable()      // 以 IF 值降冪排序
+
+                    //    .CopyToDataTable();
                     Dt.TableName = fileInfo[i].Name.Replace(".csv", "");
                     Ds.Tables.Add(Dt);
                 }

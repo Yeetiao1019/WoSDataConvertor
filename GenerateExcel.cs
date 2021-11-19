@@ -25,6 +25,29 @@ namespace WoSDataConvertor
                     Sheet = DataTableToSheet(0, Sheet, dt, true);
                     Workbook.Write(stream);
                     FileCount++;
+                    Console.WriteLine($"已輸出成功檔案：{FileCount}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public static void ExportOneExcelFile(DataSet ds, string path)
+        {
+            string Category;
+            try
+            {
+                Category = "彙整總檔";
+                using (FileStream stream = new FileStream($@"{path}/{Category}.xlsx", FileMode.Create, FileAccess.Write))
+                {
+                    SXSSFWorkbook Workbook = new SXSSFWorkbook();
+                    ISheet Sheet;
+                    Sheet = Workbook.CreateSheet(Category);
+                    Sheet = DataSetToSheet(0, Sheet, ds, true);
+                    Workbook.Write(stream);
+                    Console.WriteLine("已輸出成功檔案");
                 }
             }
             catch (Exception ex)
@@ -62,6 +85,46 @@ namespace WoSDataConvertor
                     }
 
                     startRowIndex++;
+                }
+            }
+
+            return sheet;
+        }
+
+        private static ISheet DataSetToSheet(int startRowIndex, ISheet sheet, DataSet ds, bool isShowColumn)
+        {
+            bool IsShowed = false;
+            if (ds != null && isShowColumn)
+            {
+                IRow row = sheet.CreateRow(startRowIndex);
+                for (int j = 0; j < ds.Tables[0].Columns.Count; j++)
+                {
+                    row.CreateCell(j).SetCellValue(ds.Tables[0].Columns[j].ToString());
+                }
+
+                startRowIndex++;
+            }
+
+            for (int i = 0; i < ds.Tables.Count; i++)
+            {
+                var Dt = MainFunction.ReplaceToNA(ds.Tables[i]);
+
+                if (Dt.Rows.Count > 0)
+                {
+                    for (int j = 0; j < Dt.Rows.Count; j++)
+                    {
+                        IRow row = sheet.CreateRow(startRowIndex);
+                        for (int k = 0; k < Dt.Columns.Count; k++)
+                        {
+                            switch (k)
+                            {
+                                default:
+                                    row.CreateCell(k).SetCellValue(Dt.Rows[j][Dt.Columns[k]?.ToString() ?? ""]?.ToString() ?? "");
+                                    break;
+                            }
+                        }
+                        startRowIndex++;
+                    }
                 }
             }
 

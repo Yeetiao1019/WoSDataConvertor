@@ -15,6 +15,7 @@ namespace WoSDataConvertor
         {
             string BeforeModifyFilePath = "../../Document/修改前";
             string AfterModifyFilePath = "../../Document/修改後";
+            string SummaryPath = "../../Document/單一彙整檔";
             try
             {
                 var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
@@ -35,8 +36,13 @@ namespace WoSDataConvertor
                 }
                 Console.WriteLine($"檔案輸出完成，共 {GenerateExcel.FileCount} 個檔案。\n");
 
-                DirectoryInfo SummaryDi = new DirectoryInfo(@"../../Document/單一彙整檔");
+                DirectoryInfo SummaryDi = new DirectoryInfo(SummaryPath);
+                if (!SummaryDi.Exists)     //  若資料夾不存在，則建立
+                {
+                    SummaryDi.Create();
+                }
                 Console.WriteLine($"目前匯出單一彙整檔的檔案資料夾路徑為：{SummaryDi.FullName}");
+                GenerateExcel.ExportOneExcelFile(BeforeModifyDs, SummaryPath);                
             }
             catch (Exception ex)
             {
@@ -51,6 +57,7 @@ namespace WoSDataConvertor
         /// </summary>
         private static void SetTotalJournalCountAndRank()
         {
+            Console.WriteLine("處理排序中...");
             int TotalJournal;
             List<int> JournalRank = new List<int>();
 
@@ -116,7 +123,7 @@ namespace WoSDataConvertor
         /// 替換回 n/a
         /// </summary>
         /// <param name="dt"></param>
-        private static DataTable ReplaceToNA(DataTable dt)
+        public static DataTable ReplaceToNA(DataTable dt)
         {
             DataTable AfterChangeTypeDt = new DataTable();
             AfterChangeTypeDt = dt.Clone();
