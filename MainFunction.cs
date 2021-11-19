@@ -18,7 +18,7 @@ namespace WoSDataConvertor
             string BeforeModifyFilePath = "../../Document/修改前";
             var BeforeModifyFileInfo = ReadCsvFile.ReadBeforeModifyFile(BeforeModifyFilePath);
             CsvToDataTable(BeforeModifyFileInfo);
-
+            SetTotalJournalCount();
 
 
             DirectoryInfo AfterModifyDi = new DirectoryInfo(@"../../Document/修改後");
@@ -35,15 +35,20 @@ namespace WoSDataConvertor
         private static void CsvToDataTable(FileInfo[] fileInfo)
         {
             int RowCount;
+            string Category;
+            string JournalRank;
+            string TotalJournal;
+            string ImpactFactor;
+            string Quartile;
             for (int i = 0; i < fileInfo.Length; i++)       // 走訪修改前資料夾下的所有檔案
             {
                 BeforeModifyDt = GetFileDataTables.GetBeforeModifyDt();
                 RowCount = 1;
                 var reader = new StreamReader(File.OpenRead(fileInfo[i].FullName));
-                BeforeModifyDt.TableName = fileInfo[i].Name;
+                BeforeModifyDt.TableName = fileInfo[i].Name.Replace(".csv", "");
                 while (!reader.EndOfStream)
                 {
-                    var DataLine = reader.ReadLine();       //讀取資料列
+                    var DataLine = reader.ReadLine().Replace(", ", "，");       //讀取資料列，並先取代 "逗號+空白" 避免因 Category 的名稱導致資料切分錯誤
                     var Values = DataLine.Split(',');   //用指定符號切割資料
                     if (RowCount < 4 && Values.Length > 0)     // 避免讀取到格式不正確的資料列
                     {
@@ -53,15 +58,44 @@ namespace WoSDataConvertor
                     {
                         for (int j = 0; j < Values[3].Split(';').Length; j++)
                         {
-                            Values[3] = Values[3].Replace("; ", ";");
+                            Category = Values[3];
+                            // IF值為 n/a，則領域期刊數、期刊排名、分位數為 n/a
+                            if (Values[5].Contains("n/a"))
+                            {
+                                JournalRank = "n/a";
+                                TotalJournal = "n/a";
+                                Quartile = "n/a";
+                                ImpactFactor = "n/a";
+                            }
+                            else
+                            {
+                                JournalRank = "";
+                                TotalJournal = "";
+                                Quartile = Values[4].Replace("\"", "");
+                                ImpactFactor = Values[5].Replace("\"", "");
+                            }
+                            Category = Category.Replace("; ", ";").Replace("，", ", ");     //將全形逗號還原回來
                             BeforeModifyDt.Rows.Add(Values[0].Replace("\"", ""),
-                                Values[3].Split(';')[j].Replace("\"", ""),
-                                Values[4].Replace("\"", ""),
-                                Values[5].Replace("\"", ""));
+                                Category.Split(';')[j].Replace("\"", ""),
+                                Quartile,
+                                ImpactFactor,
+                                JournalRank,
+                                TotalJournal);
                         }
                     }
                 }
                 BeforeModifyDs.Tables.Add(BeforeModifyDt);
+            }
+        }
+
+        /// <summary>
+        /// 設定領域期刊數
+        /// </summary>
+        private static void SetTotalJournalCount()
+        {
+            for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
+            {
+                //var JournalCategory 
             }
         }
     }
