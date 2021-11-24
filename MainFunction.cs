@@ -27,7 +27,8 @@ namespace WoSDataConvertor
                 {
                     AfterModifyDi.Create();
                 }
-                Console.WriteLine($"目前修改後的檔案資料夾路徑為：{AfterModifyDi.FullName}");
+
+                Console.WriteLine($"\n目前修改後的檔案資料夾路徑為：{AfterModifyDi.FullName}");
                 for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
                 {
                     var Dt = BeforeModifyDs.Tables[i];
@@ -46,10 +47,11 @@ namespace WoSDataConvertor
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"發生錯誤：{ex.Message}");
             }
 
-            Console.Read();
+            Console.WriteLine("按下任意鍵結束程式");
+            Console.ReadKey();
         }
 
         /// <summary>
@@ -62,9 +64,9 @@ namespace WoSDataConvertor
             List<int> JournalRank = new List<int>();
 
             for (int i = 0; i < BeforeModifyDs.Tables.Count; i++)
-            {
+            {                
                 var Dt = BeforeModifyDs.Tables[i];
-
+                Console.WriteLine($"處理排序中...（檔案{i + 1}：{Dt.TableName}）");
                 var JournalCategoryRow = Dt.AsEnumerable()     // 取得 Dt 內的所有 Category
                     .GroupBy(r => r.Field<string>("Category"))
                     .ToList();

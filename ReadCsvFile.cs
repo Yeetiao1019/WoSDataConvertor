@@ -28,7 +28,7 @@ namespace WoSDataConvertor
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"發生錯誤：{ex.Message}");
                 return null;
             }
         }
@@ -62,13 +62,13 @@ namespace WoSDataConvertor
                         {
                             RowCount++;
                         }
-                        else if (RowCount >= 4 && Values.Length > 5)      // 讀取正確資料
+                        else if (RowCount >= 4 && Values.Length > 5 && Values[5].Trim().Length != 0)      // 讀取正確資料
                         {
                             for (int j = 0; j < Values[3].Split(';').Length; j++)
                             {
                                 Category = Values[3];
-                                // IF值為 n/a，則領域期刊數、期刊排名、分位數為 n/a
-                                if (Values[5].Contains("n/a"))
+                                // 收錄分類為 ESCI 或 AHCI 或 IF 值為 n/a，則領域期刊數、期刊排名、分位數為 n/a
+                                if (Values[3].Split(';')[j].Contains("ESCI") || Values[3].Split(';')[j].Contains("AHCI") || Values[5].Contains("n/a"))
                                 {
                                     JournalRank = "n/a";
                                     TotalJournal = "n/a";
@@ -105,7 +105,7 @@ namespace WoSDataConvertor
             }
             catch (Exception ex)
             {
-                Console.WriteLine("讀取 csv 發生錯誤");
+                Console.WriteLine("發生錯誤：讀取 csv 發生錯誤");
             }
 
             return Ds;

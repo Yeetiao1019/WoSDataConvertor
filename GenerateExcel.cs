@@ -34,6 +34,11 @@ namespace WoSDataConvertor
             }
         }
 
+        /// <summary>
+        /// 匯出單檔 Excel
+        /// </summary>
+        /// <param name="ds"></param>
+        /// <param name="path"></param>
         public static void ExportOneExcelFile(DataSet ds, string path)
         {
             string Category;
@@ -47,15 +52,23 @@ namespace WoSDataConvertor
                     Sheet = Workbook.CreateSheet(Category);
                     Sheet = DataSetToSheet(0, Sheet, ds, true);
                     Workbook.Write(stream);
-                    Console.WriteLine("已輸出成功檔案");
+                    Console.WriteLine("已完成檔案輸出");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"發生錯誤：{ex.Message}");
             }
         }
 
+        /// <summary>
+        /// 傳入 DataTable，將 DataTable 輸出為 Excel Sheet。
+        /// </summary>
+        /// <param name="startRowIndex">Excel 要從第幾列開始列出資料</param>
+        /// <param name="sheet"></param>
+        /// <param name="dt">傳入 DataTable</param>
+        /// <param name="isShowColumn">Excel 是否要列出 DataTable 欄位名稱</param>
+        /// <returns></returns>
         private static ISheet DataTableToSheet(int startRowIndex, ISheet sheet, DataTable dt, bool isShowColumn)
         {
             if (dt != null && isShowColumn)
@@ -91,9 +104,16 @@ namespace WoSDataConvertor
             return sheet;
         }
 
+        /// <summary>
+        /// 傳入 DataSet，將 DataSet 內的所有 DataTable 輸出為 Excel Sheet。
+        /// </summary>
+        /// <param name="startRowIndex">Excel 要從第幾列開始列出資料</param>
+        /// <param name="sheet"></param>
+        /// <param name="ds">傳入 DataSet</param>
+        /// <param name="isShowColumn">Excel 是否要列出 DataTable 欄位名稱</param>
+        /// <returns></returns>
         private static ISheet DataSetToSheet(int startRowIndex, ISheet sheet, DataSet ds, bool isShowColumn)
         {
-            bool IsShowed = false;
             if (ds != null && isShowColumn)
             {
                 IRow row = sheet.CreateRow(startRowIndex);
